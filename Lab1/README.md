@@ -1,3 +1,0 @@
-Compilar :
-
-javac *.java
