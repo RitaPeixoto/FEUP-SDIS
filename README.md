@@ -1,24 +1,14 @@
 # FEUP-SDIS
 
 
-Needs prior installation of the javacc parser and java jdk
+Needs prior installation of the javacc parser and java jdk.
 
 
 To run javacc files:
 
-javacc [filename].jj
 
-java *.java
+$ javacc [filename].jj
 
-java [filename]
+$ java *.java
 
-
-To run jjtree files:
-
-jjtree [filename].jjt
-
-javacc [filename].jj
-
-javac *.java
-
-java [filename]
+$ java [filename]
