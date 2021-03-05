@@ -1,23 +1,23 @@
 import java.io.*;
 import java.net.*;
+import java.util.*;
+import java.rmi.Naming;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 public class Client {
 
-    private int multicastPort;
-    private MulticastSocket socket;
-    private String oper;
-    private InetAddress multicastAddress;
-    private InetAddress datagramAddress;
-    private int datagramPort;
-    private String dns_name;
-    private String ip_address;   
     private String request = "";
+    private String hostname; 
+    private String remote_name;
+    private String oper; 
+    private List<String> opnd = new ArrayList<String>();
 
 
     public static void main(String[] args) throws IOException{
 
-        if(args.length < 3 || args.length > 4) {
-            System.out.println("Usage: java Client <mcast_addr> <mcast_port> <oper> <opnd> ");
+        if(args.length < 3 || args.length > 5) {
+            System.out.println("Usage: java Client <host_name> <remote_object_name> <oper> <opnd>*");
             return;
         }
 
@@ -27,45 +27,27 @@ public class Client {
 
         if(res == -1) return;
 
-        try{
-            client.run();
-        }
-        catch (SocketException e){
-            System.out.println(e.getMessage());
-        }
+        client.run();
 
     }
     
     private Integer create(String[] args) throws IOException{
-        this.multicastPort = Integer.parseInt(args[1]);
-        this.socket = new MulticastSocket(this.multicastPort);
-        this.multicastAddress = InetAddress.getByName(args[0]); 
-      
-        this.socket.joinGroup(this.multicastAddress);
-
-        byte[] buffer = new byte[512];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
-        this.socket.receive(packet);
-
-        String[] res = new String(packet.getData()).split(" "); 
-        System.out.println(res[1]);
-        System.out.println(res[0].trim());
-        this.datagramAddress = InetAddress.getByName(res[0].trim());
-        this.datagramPort = Integer.parseInt(res[1].trim());
-        System.out.println("multicast: " + this.multicastAddress + " " + this.multicastPort + " : " + this.datagramAddress + " " + this.datagramPort);
-
-
+        this.hostname = args[0];
+        this.remote_name = args[1];
+        
         this.oper = args[2];
 
         if(this.oper.equals("register")) {
-            this.dns_name = args[3];
-            this.ip_address = args[4];
-            this.request = "REGISTER " + this.dns_name + " " + this.ip_address;
+            String dns_name = args[3];
+            String ip_address = args[4];
+            this.opnd.add(dns_name);
+            this.opnd.add(ip_address);
+            this.request = "REGISTER " + dns_name + " " + ip_address;
         }
         else if(this.oper.equals("lookup")) {
-            this.dns_name = args[3];
-            this.request = "LOOKUP " + this.dns_name;
+            String dns_name = args[3];
+            this.opnd.add(dns_name);
+            this.request = "LOOKUP " + dns_name;
         }
         else {
             System.out.println("Invalid Operation");
@@ -76,18 +58,19 @@ public class Client {
     }
 
     private void run() throws IOException {
-        byte[] buffer = new byte[512];
-        buffer = this.request.getBytes();
-        DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length, this.datagramAddress, this.datagramPort);
-        this.socket.send(requestDatagram);
-
-        DatagramPacket responseDatagram = new DatagramPacket(buffer, buffer.length);
-        this.socket.receive(responseDatagram);
-        String response = new String(responseDatagram.getData(), 0, responseDatagram.getLength());
-
-        System.out.println(this.request + "*::" + response);
-        this.socket.close();
-    }
-
-    
+        try {
+            Registry registry = LocateRegistry.getRegistry(this.hostname);
+            RemoteInterface stub = (RemoteInterface) registry.lookup(this.remote_name);
+            String msg = stub.answer(this.request);
+            String verify = this.oper;
+            for (String opnd : this.opnd) {
+                verify = verify + " " + opnd;
+            }
+            verify += " :: " + msg;
+            System.out.println(verify);
+        } catch (Exception e) {
+            System.err.println("Client exception: " + e.toString());
+            e.printStackTrace();
+        }
+    }   
 }

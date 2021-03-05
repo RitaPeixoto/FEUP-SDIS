@@ -8,8 +8,8 @@ The goal of this lab was to consolidate the main concepts required for programmi
 The server program shall be invoked as follows:
 ```
 java Server <srvc_port> <mcast_addr> <mcast_port>
-where:
 ```
+where:
 
 **\<srvc_port\>** is the port number where the server provides the service
 

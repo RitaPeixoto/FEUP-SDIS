@@ -1,85 +1,50 @@
 import java.io.*;
 import java.net.*;
 import java.util.Hashtable;
-import java.util.concurrent.*;
+import java.rmi.registry.Registry;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Hashtable;
+public class Server implements RemoteInterface{
 
-public class Server {
-
-    private int multicastPort;
-    private int serverPort;
-    private InetAddress multicastAddress;
-    private InetAddress serverAddress;
-
-    private DatagramSocket serverSocket;
-    private MulticastSocket multicastSocket;
+    private String remoteName;
     private Hashtable<String,String> table;
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) {
 
-        if(args.length != 3){
-            System.out.println("Usage: java Server <srvc_port> <mcast_addr> <mcast_port>");
-        }
-
-        Server server = new Server();
-        
-        try{
-            server.create(args);
-        }
-        catch (IOException e){
-            System.err.println(e.getMessage());
+        if(args.length != 1){
+            System.out.println("Usage: java Server <remote_object_name>");
             return;
         }
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        
+        Server server = new Server();
 
-        scheduler.scheduleAtFixedRate(new Runnable(){
-            @Override
-            public void run(){
-                    String msg = "localhost" + " " + server.serverPort;
-                    byte[] buf = msg.getBytes();
-                    DatagramPacket newPacket = new DatagramPacket(buf, buf.length, server.multicastAddress,server.multicastPort);
-                    try{
-                        server.multicastSocket.send(newPacket);
-                        System.out.println("multicast: " + server.multicastAddress + " " + server.multicastPort + ":" + server.serverAddress + " " + server.serverPort);
-                    }
-                    catch(IOException e){
-                        e.printStackTrace();
-                    }
-            } 
-        }, 0, 1, TimeUnit.SECONDS);
-
-        while(true){
-            server.run();
+        try{
+            server.create(args);
+            RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(server, 0);
+            Registry registry = LocateRegistry.getRegistry();
+            registry.bind(server.remoteName, stub);
+        }
+        catch (Exception e){
+            System.err.println(e.getMessage());
+            return;
         }
 
 
     }
 
     private void create(String[] args) throws IOException{
-        this.serverPort = Integer.parseInt(args[0]);
-        this.multicastAddress = InetAddress.getByName(args[1]);
-        this.multicastPort = Integer.parseInt(args[2]);
-        this.serverAddress = InetAddress.getByName("localhost");
-        
-        
-        this.multicastSocket = new MulticastSocket(this.multicastPort);
-        this.serverSocket = new DatagramSocket(this.serverPort);
-
+        this.remoteName = args[0];
         this.table = new Hashtable<String, String>();
-
-        
     }
 
-    private void run() throws IOException{
-        System.out.println("Adeus");
-        byte[] buffer = new byte[512];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        serverSocket.receive(packet);
-        this.process(packet);
+    public String answer(String request){
+        String msg = this.process(request);
+        System.out.println(msg);
+        return msg;
     }
 
-    private void process(DatagramPacket packet) throws IOException{
-        String received = new String(packet.getData());
+    private String process(String received){
         String msg = this.extract(received);
 
         int res = -1;
@@ -92,18 +57,11 @@ public class Server {
             msg = Integer.toString(res);
         }
 
-        byte[] buf = msg.getBytes();
+        System.out.println(received + " :: " + msg);
 
-        int clientPort = packet.getPort();
-
-        InetAddress clientAddress = packet.getAddress();
-        
-        DatagramPacket newPacket = new DatagramPacket(buf, buf.length, clientAddress, clientPort);
-
-        this.serverSocket.send(newPacket);
-
-
+        return msg;
     }
+
     private String extract(String received) {
         String[] msgArgs = received.split(" ");
 

@@ -17,6 +17,7 @@ public class Server {
 
         if(args.length != 3){
             System.out.println("Usage: java Server <srvc_port> <mcast_addr> <mcast_port>");
+            return;
         }
 
         Server server = new Server();
