@@ -16,11 +16,11 @@ to retrieve the IP address previously bound to a DNS name. It returns the IP add
 
 The server program shall be invoked as follows:
 ```
-java Server \<port number\>
+java Server <port number>
 ```
 where
 
-\<port number\>
+**\<port number\>**
 is the port number the server shall use to provide the service
 
 
@@ -28,25 +28,25 @@ is the port number the server shall use to provide the service
 
 The client program shall be invoked as follows:
 ```
-java Client \<host\> \<port\> \<oper\> \<opnd\>*
+java Client <host> <port> <oper> <opnd>*
 ```
 where
 
-\<host\>
+**\<host\>**
 is the DNS name (or the IP address, in the dotted decimal format) where the server is running
 
-\<port\>
+**\<port\>**
 is the port number where the server is providing service
 
-\<oper\>
+**\<oper\>**
 is the operation to request from the server, either "register" or "lookup"
 
-\<opnd\>*
+**\<opnd\>***
 is the list of operands of that operation
 
 
-\<DNS name\> \<IP address\> for register
+**\<DNS name\> \<IP address\>** for register
 
-\<DNS name\> for lookup
+**\<DNS name\>** for lookup
 
 After submitting a request, the client waits to receive a reply to the request, prints the reply, and then terminates.
